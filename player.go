@@ -21,9 +21,9 @@ func (p *player) draw(screen *ebiten.Image) {
 
 func (p *player) update() {
 	if ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
-		p.vel.x = -3.0
+		p.vel.x = -5.0
 	} else if ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
-		p.vel.x = 3.0
+		p.vel.x = 5.0
 	} else {
 		p.vel.x = 0.0
 	}
