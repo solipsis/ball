@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"image/color"
 	"image/png"
 	"log"
 	"math"
@@ -11,8 +12,8 @@ import (
 )
 
 const (
-	screenWidth  = 600
-	screenHeight = 600
+	screenWidth  = 300
+	screenHeight = 300
 )
 
 var ballImage *ebiten.Image
@@ -24,7 +25,8 @@ type vec2 struct {
 }
 
 type Game struct {
-	ball ball
+	ball  *ball
+	ball2 *ball
 }
 
 type ball struct {
@@ -42,16 +44,19 @@ func dot(a, b vec2) float64 {
 
 func collide(b1 *ball, b2 *ball) {
 
-	b1 = &ball{
-		pos:  vec2{x: 50, y: 0},
-		vel:  vec2{x: 10, y: 10.0},
-		mass: 10.0,
-	}
-	b2 = &ball{
-		pos:  vec2{x: 70, y: 10},
-		vel:  vec2{x: -5.0, y: -3.0},
-		mass: 10.0,
-	}
+	/*
+		b1 = &ball{
+			pos:  vec2{x: 50, y: 0},
+			vel:  vec2{x: 10, y: 10.0},
+			mass: 10.0,
+		}
+		b2 = &ball{
+			pos:  vec2{x: 70, y: 10},
+			vel:  vec2{x: -5.0, y: -3.0},
+			mass: 10.0,
+		}
+	*/
+	fmt.Println("------------------------------")
 
 	// 1. find unit normal and unit tangent vectors
 	n := vec2{x: b2.pos.x - b1.pos.x, y: b2.pos.y - b1.pos.y}
@@ -93,28 +98,66 @@ func collide(b1 *ball, b2 *ball) {
 	fmt.Println(b1.vel, b2.vel)
 	b1.vel = v1Prime
 	b2.vel = v2Prime
+	fmt.Println("final")
 	fmt.Println(b1.vel, b2.vel)
 }
 
+func (b *ball) update() {
+	b.vel.x += b.acc.x
+	b.vel.y += b.acc.y
+
+	b.pos.x += b.vel.x
+	b.pos.y += b.vel.y
+
+	if b.pos.x-b.radius < 0 {
+		b.vel.x = b.vel.x * -1.0
+		b.pos.x = b.radius
+	}
+	if b.pos.x+b.radius > screenWidth {
+		b.vel.x = b.vel.x * -1.0
+		b.pos.x = screenWidth - b.radius
+	}
+	if b.pos.y+b.radius > screenHeight {
+		b.vel.y = b.vel.y * -1.0
+		b.pos.y = screenHeight - b.radius
+	}
+	if b.pos.y-b.radius < 0 {
+		b.vel.y = b.vel.y * -1.0
+		b.pos.y = b.radius
+	}
+}
+
 func (g *Game) Update() error {
-	g.ball.vel.x += gravity.x
-	g.ball.vel.y += gravity.y
+	/*
+		g.ball.vel.x += gravity.x
+		g.ball.vel.y += gravity.y
 
-	g.ball.pos.x += g.ball.vel.x
-	g.ball.pos.y += g.ball.vel.y
+		g.ball.pos.x += g.ball.vel.x
+		g.ball.pos.y += g.ball.vel.y
 
-	if g.ball.pos.y+g.ball.radius > screenHeight {
-		g.ball.vel.y = g.ball.vel.y * -1.0
-		g.ball.pos.y = screenHeight - g.ball.radius
+		if g.ball.pos.y+g.ball.radius > screenHeight {
+			g.ball.vel.y = g.ball.vel.y * -1.0
+			g.ball.pos.y = screenHeight - g.ball.radius
+		}
+	*/
+	g.ball.update()
+	g.ball2.update()
+
+	distBetweenBallsSquared := ((g.ball2.pos.x - g.ball.pos.x) * (g.ball2.pos.x - g.ball.pos.x)) + ((g.ball2.pos.y - g.ball.pos.y) * (g.ball2.pos.y - g.ball.pos.y))
+	if distBetweenBallsSquared < ((g.ball.radius + g.ball2.radius) * (g.ball.radius + g.ball2.radius)) {
+		collide(g.ball, g.ball2)
 	}
 
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
+	screen.Fill(color.NRGBA{0xFF, 0xFF, 0xFF, 0xFF})
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(g.ball.pos.x-g.ball.radius, g.ball.pos.y-g.ball.radius)
-	//op.GeoM.Scale(5.0, 5.0)
+	screen.DrawImage(ballImage, op)
+	op = &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(g.ball2.pos.x-g.ball2.radius, g.ball2.pos.y-g.ball2.radius)
 	screen.DrawImage(ballImage, op)
 }
 
@@ -134,15 +177,23 @@ func main() {
 	ballImage = ebiten.NewImageFromImage(img)
 	ebiten.SetWindowSize(screenWidth, screenHeight)
 
-	collide(&ball{}, &ball{})
+	//collide(&ball{}, &ball{})
 	//	return
 
 	g := &Game{
-		ball: ball{
-			pos:    vec2{x: 50, y: 0},
-			vel:    vec2{x: 0, y: 0.0},
+		ball: &ball{
+			pos: vec2{x: 50, y: 50},
+			vel: vec2{x: 2.5, y: 2.7},
+			//	acc:    gravity,
+			radius: 18,
+			mass:   10,
+		},
+		ball2: &ball{
+			pos:    vec2{x: 200, y: 200},
+			vel:    vec2{x: 1.5, y: 1.7},
 			acc:    gravity,
 			radius: 18,
+			mass:   10,
 		},
 	}
 
