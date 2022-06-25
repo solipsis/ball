@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"image/color"
 	"image/png"
 	"log"
@@ -12,12 +11,13 @@ import (
 )
 
 const (
-	screenWidth  = 300
-	screenHeight = 300
+	screenWidth  = 600
+	screenHeight = 600
 )
 
 var ballImage *ebiten.Image
-var gravity = vec2{x: 0.0, y: 0.03}
+var playerImage *ebiten.Image
+var gravity = vec2{x: 0.0, y: 0.13}
 
 type vec2 struct {
 	x float64
@@ -25,8 +25,9 @@ type vec2 struct {
 }
 
 type Game struct {
-	ball  *ball
-	ball2 *ball
+	ball    *ball
+	ball2   *ball
+	player1 *player
 }
 
 type ball struct {
@@ -38,7 +39,6 @@ type ball struct {
 }
 
 func dot(a, b vec2) float64 {
-
 	return (a.x * b.x) + (a.y * b.y)
 }
 
@@ -56,7 +56,7 @@ func collide(b1 *ball, b2 *ball) {
 			mass: 10.0,
 		}
 	*/
-	fmt.Println("------------------------------")
+	//fmt.Println("------------------------------")
 
 	// 1. find unit normal and unit tangent vectors
 	n := vec2{x: b2.pos.x - b1.pos.x, y: b2.pos.y - b1.pos.y}
@@ -64,7 +64,7 @@ func collide(b1 *ball, b2 *ball) {
 	un := vec2{x: n.x / magnitude, y: n.y / magnitude}
 	ut := vec2{x: -un.y, y: un.x}
 
-	fmt.Println(n, magnitude, un, ut)
+	//fmt.Println(n, magnitude, un, ut)
 
 	// 2. Create the initial(before the collision velocity vectors
 	// already done
@@ -95,11 +95,11 @@ func collide(b1 *ball, b2 *ball) {
 	v1Prime := vec2{x: v1nPrimeVec.x + v1tPrimeVec.x, y: v1nPrimeVec.y + v1tPrimeVec.y}
 	v2Prime := vec2{x: v2nPrimeVec.x + v2tPrimeVec.x, y: v2nPrimeVec.y + v2tPrimeVec.y}
 
-	fmt.Println(b1.vel, b2.vel)
+	//fmt.Println(b1.vel, b2.vel)
 	b1.vel = v1Prime
 	b2.vel = v2Prime
-	fmt.Println("final")
-	fmt.Println(b1.vel, b2.vel)
+	//	fmt.Println("final")
+	//	fmt.Println(b1.vel, b2.vel)
 }
 
 func (b *ball) update() {
@@ -108,6 +108,12 @@ func (b *ball) update() {
 
 	b.pos.x += b.vel.x
 	b.pos.y += b.vel.y
+
+	mag := (b.vel.x * b.vel.x) + (b.vel.y * b.vel.y)
+	if mag > 12*12 {
+		b.vel.x *= 0.9
+		b.vel.y *= 0.9
+	}
 
 	if b.pos.x-b.radius < 0 {
 		b.vel.x = b.vel.x * -1.0
@@ -141,12 +147,28 @@ func (g *Game) Update() error {
 		}
 	*/
 	g.ball.update()
-	g.ball2.update()
+	//g.ball2.update()
+	g.player1.update()
 
-	distBetweenBallsSquared := ((g.ball2.pos.x - g.ball.pos.x) * (g.ball2.pos.x - g.ball.pos.x)) + ((g.ball2.pos.y - g.ball.pos.y) * (g.ball2.pos.y - g.ball.pos.y))
-	if distBetweenBallsSquared < ((g.ball.radius + g.ball2.radius) * (g.ball.radius + g.ball2.radius)) {
-		collide(g.ball, g.ball2)
+	/*
+		distBetweenBallsSquared := ((g.ball2.pos.x - g.ball.pos.x) * (g.ball2.pos.x - g.ball.pos.x)) + ((g.ball2.pos.y - g.ball.pos.y) * (g.ball2.pos.y - g.ball.pos.y))
+		if distBetweenBallsSquared < ((g.ball.radius + g.ball2.radius) * (g.ball.radius + g.ball2.radius)) {
+			collide(g.ball, g.ball2)
+		}
+	*/
+
+	distBetweenBallPlayer := ((g.player1.pos.x - g.ball.pos.x) * (g.player1.pos.x - g.ball.pos.x)) + ((g.player1.pos.y - g.ball.pos.y) * (g.player1.pos.y - g.ball.pos.y))
+	if distBetweenBallPlayer < ((g.ball.radius + g.player1.radius) * (g.ball.radius + g.player1.radius)) {
+		//	fmt.Println("b1p")
+		collidePlayer(g.player1, g.ball)
 	}
+	/*
+		distBetweenBallPlayer = ((g.player1.pos.x - g.ball2.pos.x) * (g.player1.pos.x - g.ball2.pos.x)) + ((g.player1.pos.y - g.ball2.pos.y) * (g.player1.pos.y - g.ball2.pos.y))
+		if distBetweenBallPlayer < ((g.ball2.radius + g.player1.radius) * (g.ball2.radius + g.player1.radius)) {
+			//	fmt.Println("b2p")
+			collidePlayer(g.player1, g.ball2)
+		}
+	*/
 
 	return nil
 }
@@ -157,8 +179,11 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	op.GeoM.Translate(g.ball.pos.x-g.ball.radius, g.ball.pos.y-g.ball.radius)
 	screen.DrawImage(ballImage, op)
 	op = &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(g.ball2.pos.x-g.ball2.radius, g.ball2.pos.y-g.ball2.radius)
-	screen.DrawImage(ballImage, op)
+	/*
+		op.GeoM.Translate(g.ball2.pos.x-g.ball2.radius, g.ball2.pos.y-g.ball2.radius)
+		screen.DrawImage(ballImage, op)
+	*/
+	g.player1.draw(screen)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
@@ -175,6 +200,17 @@ func main() {
 		log.Fatal(err)
 	}
 	ballImage = ebiten.NewImageFromImage(img)
+
+	f, err = os.Open("semi3.png")
+	if err != nil {
+		log.Fatal(err)
+	}
+	img, err = png.Decode(f)
+	if err != nil {
+		log.Fatal(err)
+	}
+	playerImage = ebiten.NewImageFromImage(img)
+
 	ebiten.SetWindowSize(screenWidth, screenHeight)
 
 	//collide(&ball{}, &ball{})
@@ -182,18 +218,23 @@ func main() {
 
 	g := &Game{
 		ball: &ball{
-			pos: vec2{x: 50, y: 50},
-			vel: vec2{x: 2.5, y: 2.7},
-			//	acc:    gravity,
+			pos:    vec2{x: 50, y: 50},
+			vel:    vec2{x: 2.5, y: 2.7},
+			acc:    gravity,
 			radius: 18,
 			mass:   10,
 		},
 		ball2: &ball{
-			pos:    vec2{x: 200, y: 200},
-			vel:    vec2{x: 1.5, y: 1.7},
-			acc:    gravity,
+			pos: vec2{x: 200, y: 200},
+			vel: vec2{x: 4.5, y: 3.7},
+			//		acc:    gravity,
 			radius: 18,
 			mass:   10,
+		},
+		player1: &player{
+			pos:    vec2{x: screenWidth / 2, y: screenHeight - 1},
+			radius: 95.0 / 2.0,
+			mass:   10000000,
 		},
 	}
 
