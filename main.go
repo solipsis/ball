@@ -1,6 +1,7 @@
 package main
 
 import (
+	"image"
 	"image/color"
 	"image/png"
 	"log"
@@ -11,13 +12,17 @@ import (
 )
 
 const (
-	screenWidth  = 600
+	screenWidth  = 800
 	screenHeight = 600
 )
 
 var ballImage *ebiten.Image
 var playerImage *ebiten.Image
 var gravity = vec2{x: 0.0, y: 0.13}
+var (
+	emptyImage    = ebiten.NewImage(3, 3)
+	emptySubImage = emptyImage.SubImage(image.Rect(1, 1, 2, 2)).(*ebiten.Image)
+)
 
 type vec2 struct {
 	x float64
@@ -25,9 +30,12 @@ type vec2 struct {
 }
 
 type Game struct {
-	ball    *ball
-	ball2   *ball
-	player1 *player
+	state state
+	/*
+		ball    *ball
+		ball2   *ball
+		player1 *player
+	*/
 }
 
 type ball struct {
@@ -134,39 +142,15 @@ func (b *ball) update() {
 }
 
 func (g *Game) Update() error {
-	/*
-		g.ball.vel.x += gravity.x
-		g.ball.vel.y += gravity.y
-
-		g.ball.pos.x += g.ball.vel.x
-		g.ball.pos.y += g.ball.vel.y
-
-		if g.ball.pos.y+g.ball.radius > screenHeight {
-			g.ball.vel.y = g.ball.vel.y * -1.0
-			g.ball.pos.y = screenHeight - g.ball.radius
-		}
-	*/
-	g.ball.update()
-	//g.ball2.update()
-	g.player1.update()
+	readInput(&g.state)
+	g.state = step(g.state)
+	//	g.ball.update()
+	//	g.player1.update()
 
 	/*
-		distBetweenBallsSquared := ((g.ball2.pos.x - g.ball.pos.x) * (g.ball2.pos.x - g.ball.pos.x)) + ((g.ball2.pos.y - g.ball.pos.y) * (g.ball2.pos.y - g.ball.pos.y))
-		if distBetweenBallsSquared < ((g.ball.radius + g.ball2.radius) * (g.ball.radius + g.ball2.radius)) {
-			collide(g.ball, g.ball2)
-		}
-	*/
-
-	distBetweenBallPlayer := ((g.player1.pos.x - g.ball.pos.x) * (g.player1.pos.x - g.ball.pos.x)) + ((g.player1.pos.y - g.ball.pos.y) * (g.player1.pos.y - g.ball.pos.y))
-	if distBetweenBallPlayer < ((g.ball.radius + g.player1.radius) * (g.ball.radius + g.player1.radius)) {
-		//	fmt.Println("b1p")
-		collidePlayer(g.player1, g.ball)
-	}
-	/*
-		distBetweenBallPlayer = ((g.player1.pos.x - g.ball2.pos.x) * (g.player1.pos.x - g.ball2.pos.x)) + ((g.player1.pos.y - g.ball2.pos.y) * (g.player1.pos.y - g.ball2.pos.y))
-		if distBetweenBallPlayer < ((g.ball2.radius + g.player1.radius) * (g.ball2.radius + g.player1.radius)) {
-			//	fmt.Println("b2p")
-			collidePlayer(g.player1, g.ball2)
+		distBetweenBallPlayer := ((g.player1.pos.x - g.ball.pos.x) * (g.player1.pos.x - g.ball.pos.x)) + ((g.player1.pos.y - g.ball.pos.y) * (g.player1.pos.y - g.ball.pos.y))
+		if distBetweenBallPlayer < ((g.ball.radius + g.player1.radius) * (g.ball.radius + g.player1.radius)) {
+			collidePlayer(g.player1, g.ball)
 		}
 	*/
 
@@ -176,14 +160,15 @@ func (g *Game) Update() error {
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(color.NRGBA{0xFF, 0xFF, 0xFF, 0xFF})
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(g.ball.pos.x-g.ball.radius, g.ball.pos.y-g.ball.radius)
+	op.GeoM.Translate(g.state.ball.pos.x-g.state.ball.radius, g.state.ball.pos.y-g.state.ball.radius)
 	screen.DrawImage(ballImage, op)
 	op = &ebiten.DrawImageOptions{}
+	DrawRect(screen, 100, 200, 20, 50, color.RGBA{R: 0x00, G: 0xFF, B: 0xFF, A: 0x00})
 	/*
 		op.GeoM.Translate(g.ball2.pos.x-g.ball2.radius, g.ball2.pos.y-g.ball2.radius)
 		screen.DrawImage(ballImage, op)
 	*/
-	g.player1.draw(screen)
+	g.state.player1.draw(screen)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
@@ -191,6 +176,8 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 }
 
 func main() {
+
+	emptyImage.Fill(color.Black)
 	f, err := os.Open("poke3.png")
 	if err != nil {
 		log.Fatal(err)
@@ -217,29 +204,51 @@ func main() {
 	//	return
 
 	g := &Game{
-		ball: &ball{
-			pos:    vec2{x: 50, y: 50},
-			vel:    vec2{x: 2.5, y: 2.7},
-			acc:    gravity,
-			radius: 18,
-			mass:   10,
+		state: state{
+			ball: ball{
+				pos:    vec2{x: 50, y: 50},
+				vel:    vec2{x: 2.5, y: 2.7},
+				acc:    gravity,
+				radius: 18,
+				mass:   10,
+			},
+			player1: player{
+				pos:    vec2{x: screenWidth / 2, y: screenHeight - 1},
+				radius: 95.0 / 2.0,
+				mass:   10000000,
+			},
+			player2: player{
+				pos:    vec2{x: -1000, y: -1000},
+				radius: 95.0 / 2.0,
+				mass:   10000000,
+			},
 		},
-		ball2: &ball{
-			pos: vec2{x: 200, y: 200},
-			vel: vec2{x: 4.5, y: 3.7},
-			//		acc:    gravity,
-			radius: 18,
-			mass:   10,
-		},
-		player1: &player{
-			pos:    vec2{x: screenWidth / 2, y: screenHeight - 1},
-			radius: 95.0 / 2.0,
-			mass:   10000000,
-		},
+		/*
+			ball2: &ball{
+				pos: vec2{x: 200, y: 200},
+				vel: vec2{x: 4.5, y: 3.7},
+				//		acc:    gravity,
+				radius: 18,
+				mass:   10,
+			},
+		*/
 	}
 
 	if err := ebiten.RunGame(g); err != nil {
 		log.Fatal(err)
 	}
 
+}
+
+// DrawRect draws a rectangle on the given destination dst.
+//
+// DrawRect is intended to be used mainly for debugging or prototyping purpose.
+func DrawRect(dst *ebiten.Image, x, y, width, height float64, clr color.Color) {
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Scale(width, height)
+	op.GeoM.Translate(x, y)
+	//emptyImage.Fill(color.White)	op.ColorM.ScaleWithColor(clr)
+	// Filter must be 'nearest' filter (default).
+	// Linear filtering would make edges blurred.
+	dst.DrawImage(emptyImage.SubImage(image.Rect(1, 1, 2, 2)).(*ebiten.Image), op)
 }

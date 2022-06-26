@@ -6,11 +6,23 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
+type input int
+
+const (
+	NONE input = iota
+	LEFT
+	RIGHT
+	UP
+	UP_LEFT
+	UP_RIGHT
+)
+
 type player struct {
 	pos    vec2
 	vel    vec2
 	radius float64
 	mass   float64
+	input  input
 }
 
 func (p *player) draw(screen *ebiten.Image) {
@@ -19,10 +31,11 @@ func (p *player) draw(screen *ebiten.Image) {
 	screen.DrawImage(playerImage, op)
 }
 
+//	} else if ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
 func (p *player) update() {
-	if ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
+	if p.input == LEFT {
 		p.vel.x = -5.0
-	} else if ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
+	} else if p.input == RIGHT {
 		p.vel.x = 5.0
 	} else {
 		p.vel.x = 0.0
