@@ -37,8 +37,19 @@ func (p *player) update() {
 		p.vel.x = -5.0
 	} else if p.input == RIGHT {
 		p.vel.x = 5.0
+	} else if p.input == UP {
+		p.vel.y = -8.0
+
 	} else {
 		p.vel.x = 0.0
+	}
+
+	p.vel.y += (gravity.y * 2.0)
+	p.pos.y += p.vel.y
+	//fmt.Println(p.vel.y, p.pos.y)
+	if p.pos.y > screenHeight {
+		p.pos.y = screenHeight
+		p.vel.y = 0.0
 	}
 
 	p.pos.x += p.vel.x

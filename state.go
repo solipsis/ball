@@ -15,6 +15,9 @@ func readInput(s *state) {
 		s.player1.input = RIGHT
 	} else if ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
 		s.player1.input = LEFT
+	} else if ebiten.IsKeyPressed(ebiten.KeyArrowUp) {
+		s.player1.input = UP
+
 	} else {
 		s.player1.input = NONE
 	}
