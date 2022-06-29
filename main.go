@@ -58,7 +58,7 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 	return screenWidth, screenHeight
 }
 
-func main() {
+func (g *Game) Init() error {
 
 	emptyImage.Fill(color.Black)
 	f, err := os.Open("poke3.png")
@@ -80,30 +80,81 @@ func main() {
 		log.Fatal(err)
 	}
 	playerImage = ebiten.NewImageFromImage(img)
-
-	ebiten.SetWindowSize(screenWidth, screenHeight)
-
-	g := &Game{
-		state: state{
-			ball: ball{
-				pos:    vec2{x: 50, y: 50},
-				vel:    vec2{x: 2.5, y: 2.7},
-				acc:    gravity,
-				radius: 18,
-				mass:   10,
-			},
-			player1: player{
-				pos:    vec2{x: screenWidth / 2, y: screenHeight - 1},
-				radius: 95.0 / 2.0,
-				mass:   10000000,
-			},
-			player2: player{
-				pos:    vec2{x: -1000, y: -1000},
-				radius: 95.0 / 2.0,
-				mass:   10000000,
-			},
+	g.state = state{
+		ball: ball{
+			pos:    vec2{x: 50, y: 50},
+			vel:    vec2{x: 2.5, y: 2.7},
+			acc:    gravity,
+			radius: 18,
+			mass:   10,
+		},
+		player1: player{
+			pos:    vec2{x: screenWidth / 2, y: screenHeight - 1},
+			radius: 95.0 / 2.0,
+			mass:   10000000,
+		},
+		player2: player{
+			pos:    vec2{x: -1000, y: -1000},
+			radius: 95.0 / 2.0,
+			mass:   10000000,
 		},
 	}
+
+	return nil
+}
+
+func main() {
+
+	/*
+		emptyImage.Fill(color.Black)
+		f, err := os.Open("poke3.png")
+		if err != nil {
+			log.Fatal(err)
+		}
+		img, err := png.Decode(f)
+		if err != nil {
+			log.Fatal(err)
+		}
+		ballImage = ebiten.NewImageFromImage(img)
+
+		f, err = os.Open("semi3.png")
+		if err != nil {
+			log.Fatal(err)
+		}
+		img, err = png.Decode(f)
+		if err != nil {
+			log.Fatal(err)
+		}
+		playerImage = ebiten.NewImageFromImage(img)
+
+		ebiten.SetWindowSize(screenWidth, screenHeight)
+	*/
+	g := &Game{}
+	g.Init()
+
+	/*
+		g := &Game{
+			state: state{
+				ball: ball{
+					pos:    vec2{x: 50, y: 50},
+					vel:    vec2{x: 2.5, y: 2.7},
+					acc:    gravity,
+					radius: 18,
+					mass:   10,
+				},
+				player1: player{
+					pos:    vec2{x: screenWidth / 2, y: screenHeight - 1},
+					radius: 95.0 / 2.0,
+					mass:   10000000,
+				},
+				player2: player{
+					pos:    vec2{x: -1000, y: -1000},
+					radius: 95.0 / 2.0,
+					mass:   10000000,
+				},
+			},
+		}
+	*/
 
 	if err := ebiten.RunGame(g); err != nil {
 		log.Fatal(err)
