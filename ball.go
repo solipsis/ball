@@ -43,20 +43,6 @@ func (b *ball) update() {
 
 func collide(b1 *ball, b2 *ball) {
 
-	/*
-		b1 = &ball{
-			pos:  vec2{x: 50, y: 0},
-			vel:  vec2{x: 10, y: 10.0},
-			mass: 10.0,
-		}
-		b2 = &ball{
-			pos:  vec2{x: 70, y: 10},
-			vel:  vec2{x: -5.0, y: -3.0},
-			mass: 10.0,
-		}
-	*/
-	//fmt.Println("------------------------------")
-
 	// 1. find unit normal and unit tangent vectors
 	n := vec2{x: b2.pos.x - b1.pos.x, y: b2.pos.y - b1.pos.y}
 	magnitude := math.Sqrt((n.x * n.x) + n.y*n.y)
@@ -94,9 +80,6 @@ func collide(b1 *ball, b2 *ball) {
 	v1Prime := vec2{x: v1nPrimeVec.x + v1tPrimeVec.x, y: v1nPrimeVec.y + v1tPrimeVec.y}
 	v2Prime := vec2{x: v2nPrimeVec.x + v2tPrimeVec.x, y: v2nPrimeVec.y + v2tPrimeVec.y}
 
-	//fmt.Println(b1.vel, b2.vel)
 	b1.vel = v1Prime
 	b2.vel = v2Prime
-	//	fmt.Println("final")
-	//	fmt.Println(b1.vel, b2.vel)
 }

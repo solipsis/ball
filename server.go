@@ -4,17 +4,22 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"image/color"
 	"log"
 	"net/http"
 	"time"
 
+	"github.com/hajimehoshi/ebiten/v2"
 	"golang.org/x/time/rate"
 	"nhooyr.io/websocket"
 )
 
 type server struct {
-	state   state
-	updates chan playerUpdate
+	state        state
+	clientInputs chan playerUpdate
+	clients      []*websocket.Conn
+	inputBuffer  [][]input
+	stateBuffer  []state
 }
 
 type playerUpdate struct {
@@ -40,7 +45,7 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			log.Printf("failed to echo with %v: %v", r.RemoteAddr, err)
 			return
 		}
-		s.updates <- pu
+		s.clientInputs <- pu
 	}
 }
 
@@ -63,4 +68,52 @@ func (s *server) readUpdate(ctx context.Context, c *websocket.Conn, l *rate.Limi
 	//	s.state[pu.ID].Y = pu.Y
 
 	return pu, nil
+}
+
+// implements ebiten.Game
+func (s *server) Update() error {
+	s.update()
+	return nil
+}
+
+func (s *server) update() {
+	// read all pending inputs
+	userUpdate := false
+	for {
+		select {
+		case up := <-s.clientInputs:
+			s.handleRollback(up)
+			userUpdate = true
+		}
+
+	}
+	if userUpdate {
+
+	}
+
+	// apply all inputs to buffer
+	// rollback to oldest of updates
+
+}
+
+func (s *server) handleRollback(up playerUpdate) {
+	//prevFrame := up.Frame
+	//prevState := s.stateBuffer[prevFrame%len(stateBuffer)]
+
+}
+
+// implements ebiten.Game
+func (s *server) Draw(screen *ebiten.Image) {
+	screen.Fill(color.NRGBA{0xFF, 0xFF, 0xFF, 0xFF})
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(s.state.ball.pos.x-s.state.ball.radius, s.state.ball.pos.y-s.state.ball.radius)
+	screen.DrawImage(ballImage, op)
+	op = &ebiten.DrawImageOptions{}
+	DrawRect(screen, 100, 200, 20, 50, color.RGBA{R: 0x00, G: 0xFF, B: 0xFF, A: 0x00})
+	s.state.players[0].draw(screen)
+}
+
+// implements ebiten.Game
+func (s *server) Layout(outsideWidth, outsideHeight int) (int, int) {
+	return screenWidth, screenHeight
 }

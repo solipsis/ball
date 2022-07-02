@@ -5,7 +5,10 @@ import (
 	"image/color"
 	"image/png"
 	"log"
+	"net"
+	"net/http"
 	"os"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -38,7 +41,7 @@ func dot(a, b vec2) float64 {
 
 func (g *Game) Update() error {
 	readInput(&g.state)
-	g.state = step(g.state)
+	//g.state = step(g.state)
 	emptyImage.Fill(color.White)
 
 	return nil
@@ -51,7 +54,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	screen.DrawImage(ballImage, op)
 	op = &ebiten.DrawImageOptions{}
 	DrawRect(screen, 100, 200, 20, 50, color.RGBA{R: 0x00, G: 0xFF, B: 0xFF, A: 0x00})
-	g.state.player1.draw(screen)
+	g.state.players[0].draw(screen)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
@@ -88,22 +91,59 @@ func (g *Game) Init() error {
 			radius: 18,
 			mass:   10,
 		},
-		player1: player{
-			pos:    vec2{x: screenWidth / 2, y: screenHeight - 1},
-			radius: 95.0 / 2.0,
-			mass:   10000000,
-		},
-		player2: player{
-			pos:    vec2{x: -1000, y: -1000},
-			radius: 95.0 / 2.0,
-			mass:   10000000,
+		players: []player{
+			player{
+				pos:    vec2{x: screenWidth / 2, y: screenHeight - 1},
+				radius: 95.0 / 2.0,
+				mass:   10000000,
+			},
+			player{
+				pos:    vec2{x: -1000, y: -1000},
+				radius: 95.0 / 2.0,
+				mass:   10000000,
+			},
 		},
 	}
 
 	return nil
 }
 
+const BUFFER_SIZE = 60
+
 func main() {
+
+	l, err := net.Listen("tcp", "localhost:8090")
+	if err != nil {
+		log.Fatalf("server net.Listen(): %v", err)
+	}
+	log.Printf("listening on http://%v", l.Addr())
+
+	srv := server{
+		clientInputs: make(chan playerUpdate),
+		inputBuffer:  make([][]input, 2),
+		stateBuffer:  make([]state, 60),
+	}
+	srv.inputBuffer[0] = make([]input, 60)
+	srv.inputBuffer[1] = make([]input, 60)
+	s := &http.Server{
+		Handler:      &srv,
+		ReadTimeout:  time.Second * 10,
+		WriteTimeout: time.Second * 10,
+	}
+
+	go func() {
+		if err := s.Serve(l); err != nil {
+			log.Fatalf("serve: %v", err)
+		}
+	}()
+
+	time.Sleep(1 * time.Second)
+	c := &Client{}
+	c.Run("http://localhost:8090")
+	if err := ebiten.RunGame(c); err != nil {
+		log.Fatal(err)
+	}
+	return
 
 	/*
 		emptyImage.Fill(color.Black)

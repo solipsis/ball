@@ -6,10 +6,15 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
-type input int
+type input struct {
+	dir       inputDirection
+	predicted bool
+}
+
+type inputDirection byte
 
 const (
-	NONE input = iota
+	NONE inputDirection = iota
 	LEFT
 	RIGHT
 	UP
@@ -33,11 +38,12 @@ func (p *player) draw(screen *ebiten.Image) {
 
 //	} else if ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
 func (p *player) update() {
-	if p.input == LEFT {
+
+	if p.input.dir == LEFT {
 		p.vel.x = -5.0
-	} else if p.input == RIGHT {
+	} else if p.input.dir == RIGHT {
 		p.vel.x = 5.0
-	} else if p.input == UP {
+	} else if p.input.dir == UP {
 		p.vel.y = -8.0
 	} else {
 		p.vel.x = 0.0

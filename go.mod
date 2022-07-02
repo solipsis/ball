@@ -2,12 +2,15 @@ module github.com/solipsis/ball
 
 go 1.18
 
-require github.com/hajimehoshi/ebiten v1.12.12
+require (
+	github.com/hajimehoshi/ebiten/v2 v2.3.5
+	golang.org/x/time v0.0.0-20220609170525-579cf78fd858
+	nhooyr.io/websocket v1.8.7
+)
 
 require (
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20220320163800-277f93cfa958 // indirect
 	github.com/gofrs/flock v0.8.1 // indirect
-	github.com/hajimehoshi/ebiten/v2 v2.3.5 // indirect
 	github.com/jezek/xgb v1.0.0 // indirect
 	github.com/klauspost/compress v1.10.3 // indirect
 	golang.org/x/exp v0.0.0-20190731235908-ec7cb31e5a56 // indirect
@@ -15,6 +18,4 @@ require (
 	golang.org/x/mobile v0.0.0-20220518205345-8578da9835fd // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	golang.org/x/sys v0.0.0-20220408201424-a24fb2fb8a0f // indirect
-	golang.org/x/time v0.0.0-20220609170525-579cf78fd858 // indirect
-	nhooyr.io/websocket v1.8.7 // indirect
 )
