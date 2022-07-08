@@ -1,4 +1,4 @@
-package main
+package ball
 
 import (
 	"context"
@@ -39,23 +39,32 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	for {
 		pu, err := s.readUpdate(r.Context(), c, l)
 		if websocket.CloseStatus(err) == websocket.StatusNormalClosure {
+			fmt.Println("normal closure")
 			return
 		}
 		if err != nil {
-			log.Printf("failed to echo with %v: %v", r.RemoteAddr, err)
-			return
+			log.Printf("failed to read update from client %v: %v", r.RemoteAddr, err)
+			//return
+			continue
 		}
+		/*
+			if pu.Input.Dir != NONE {
+				fmt.Println(pu)
+			}
+		*/
+		//fmt.Println(pu)
+		// TODO(IMPLEMENT)
 		s.clientInputs <- pu
 	}
 }
 
 func (s *server) readUpdate(ctx context.Context, c *websocket.Conn, l *rate.Limiter) (playerUpdate, error) {
-	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
-	defer cancel()
+	//	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
+	//	defer cancel()
 
-	_, buf, err := c.Read(ctx)
+	_, buf, err := c.Read(context.TODO())
 	if err != nil {
-		return playerUpdate{}, fmt.Errorf("failed to read update")
+		return playerUpdate{}, fmt.Errorf("failed to read update: %v", err)
 	}
 	pu := playerUpdate{}
 	err = json.Unmarshal(buf, &pu)
@@ -63,7 +72,7 @@ func (s *server) readUpdate(ctx context.Context, c *websocket.Conn, l *rate.Limi
 		fmt.Println(err)
 		fmt.Println(string(buf))
 	}
-	fmt.Println("received update:", pu)
+	//fmt.Println("received update:", pu)
 	//	s.state[pu.ID].X = pu.X
 	//	s.state[pu.ID].Y = pu.Y
 

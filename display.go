@@ -1,4 +1,4 @@
-package main
+package ball
 
 import (
 	"image/color"

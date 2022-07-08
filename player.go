@@ -1,4 +1,4 @@
-package main
+package ball
 
 import (
 	"math"
@@ -7,8 +7,8 @@ import (
 )
 
 type input struct {
-	dir       inputDirection
-	predicted bool
+	Dir       inputDirection
+	Predicted bool
 }
 
 type inputDirection byte
@@ -39,11 +39,11 @@ func (p *player) draw(screen *ebiten.Image) {
 //	} else if ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
 func (p *player) update() {
 
-	if p.input.dir == LEFT {
+	if p.input.Dir == LEFT {
 		p.vel.x = -5.0
-	} else if p.input.dir == RIGHT {
+	} else if p.input.Dir == RIGHT {
 		p.vel.x = 5.0
-	} else if p.input.dir == UP {
+	} else if p.input.Dir == UP {
 		p.vel.y = -8.0
 	} else {
 		p.vel.x = 0.0

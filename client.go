@@ -1,4 +1,4 @@
-package main
+package ball
 
 import (
 	"context"
@@ -33,17 +33,18 @@ type inputUpdate struct {
 
 func (c *Client) readInput() input {
 	if ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
-		return input{dir: RIGHT, predicted: false}
+		return input{Dir: RIGHT, Predicted: false}
 	} else if ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
-		return input{dir: LEFT, predicted: false}
+		return input{Dir: LEFT, Predicted: false}
 	} else if ebiten.IsKeyPressed(ebiten.KeyArrowUp) {
-		return input{dir: UP, predicted: false}
+		return input{Dir: UP, Predicted: false}
 	} else {
-		return input{dir: NONE, predicted: false}
+		return input{Dir: NONE, Predicted: false}
 	}
 }
 
 func (c *Client) update() {
+	//fmt.Println("client update")
 	in := c.readInput()
 	c.inputBuffer[c.ID][c.state.frame%len(c.inputBuffer)] = in
 
@@ -59,14 +60,12 @@ func (c *Client) update() {
 	}()
 
 	// read updates
-	for {
-		select {
-		case up := <-c.serverUpdates:
-			fmt.Println("received update")
-			c.handleRollback(up)
-		default:
-			break
-		}
+	select {
+	case up := <-c.serverUpdates:
+		//fmt.Println("received update")
+		c.handleRollback(up)
+	default:
+		break
 	}
 
 	// advance frame
@@ -94,6 +93,7 @@ func (c *Client) handleRollback(rollback state) {
 func (c *Client) Run(url string) {
 	c.ID = 0 // TODO: Get value from server
 	c.serverUpdates = make(chan state)
+	c.state = newState()
 	c.inputBuffer = make([][]input, 2)
 	c.inputBuffer[0] = make([]input, 60)
 	c.inputBuffer[1] = make([]input, 60)
@@ -106,7 +106,8 @@ func (c *Client) Run(url string) {
 	defer conn.Close(websocket.StatusInternalError, "client socket closing")
 	c.conn = conn
 
-	go func() {
+	//go func() {
+	for {
 		// read frame
 		_, stateBuf, err := c.conn.Read(context.TODO())
 		if err != nil {
@@ -120,7 +121,8 @@ func (c *Client) Run(url string) {
 		}
 
 		c.serverUpdates <- s
-	}()
+	}
+	//}()
 }
 
 // implements ebiten.Game

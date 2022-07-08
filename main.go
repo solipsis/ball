@@ -1,6 +1,7 @@
-package main
+package ball
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"image/png"
@@ -25,6 +26,29 @@ var (
 	emptyImage    = ebiten.NewImage(3, 3)
 	emptySubImage = emptyImage.SubImage(image.Rect(1, 1, 2, 2)).(*ebiten.Image)
 )
+
+func init() {
+	emptyImage.Fill(color.Black)
+	f, err := os.Open("poke3.png")
+	if err != nil {
+		log.Fatal(err)
+	}
+	img, err := png.Decode(f)
+	if err != nil {
+		log.Fatal(err)
+	}
+	ballImage = ebiten.NewImageFromImage(img)
+
+	f, err = os.Open("semi3.png")
+	if err != nil {
+		log.Fatal(err)
+	}
+	img, err = png.Decode(f)
+	if err != nil {
+		log.Fatal(err)
+	}
+	playerImage = ebiten.NewImageFromImage(img)
+}
 
 type vec2 struct {
 	x float64
@@ -137,9 +161,15 @@ func main() {
 		}
 	}()
 
-	time.Sleep(1 * time.Second)
-	c := &Client{}
-	c.Run("http://localhost:8090")
+	fmt.Println("Sleeping...")
+	//time.Sleep(1 * time.Second)
+	fmt.Println("waking up")
+
+	fmt.Println("pre run")
+	// TODO: this never terminates
+	go c.Run("http://localhost:8090")
+	fmt.Println("post Run")
+
 	if err := ebiten.RunGame(c); err != nil {
 		log.Fatal(err)
 	}
