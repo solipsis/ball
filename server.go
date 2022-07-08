@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"image/color"
 	"log"
+	"net"
 	"net/http"
 	"time"
 
@@ -14,7 +15,7 @@ import (
 	"nhooyr.io/websocket"
 )
 
-type server struct {
+type Server struct {
 	state        state
 	clientInputs chan playerUpdate
 	clients      []*websocket.Conn
@@ -27,7 +28,37 @@ type playerUpdate struct {
 	Input input `json:"input"`
 }
 
-func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func NewServer() *Server {
+
+	s := Server{
+		clientInputs: make(chan playerUpdate),
+		inputBuffer:  make([][]input, 2),
+		stateBuffer:  make([]state, 60),
+	}
+	s.inputBuffer[0] = make([]input, 60)
+	s.inputBuffer[1] = make([]input, 60)
+
+	return &s
+}
+
+func (s *Server) Listen() {
+
+	l, err := net.Listen("tcp", "localhost:8090")
+	if err != nil {
+		log.Fatalf("server net.Listen(): %v", err)
+	}
+	srv := &http.Server{
+		Handler:      s,
+		ReadTimeout:  time.Second * 10,
+		WriteTimeout: time.Second * 10,
+	}
+	log.Printf("listening on http://%v", l.Addr())
+	if err := srv.Serve(l); err != nil {
+		log.Fatalf("serve: %v", err)
+	}
+}
+
+func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	c, err := websocket.Accept(w, r, &websocket.AcceptOptions{})
 	if err != nil {
 		log.Fatalf("establishing websocket: %v", err)
@@ -58,7 +89,7 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *server) readUpdate(ctx context.Context, c *websocket.Conn, l *rate.Limiter) (playerUpdate, error) {
+func (s *Server) readUpdate(ctx context.Context, c *websocket.Conn, l *rate.Limiter) (playerUpdate, error) {
 	//	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	//	defer cancel()
 
@@ -80,21 +111,25 @@ func (s *server) readUpdate(ctx context.Context, c *websocket.Conn, l *rate.Limi
 }
 
 // implements ebiten.Game
-func (s *server) Update() error {
+func (s *Server) Update() error {
 	s.update()
 	return nil
 }
 
-func (s *server) update() {
+func (s *Server) update() {
 	// read all pending inputs
 	userUpdate := false
+	fmt.Println("update")
 	for {
 		select {
 		case up := <-s.clientInputs:
 			s.handleRollback(up)
 			userUpdate = true
+			continue
+		default:
+			break
 		}
-
+		break
 	}
 	if userUpdate {
 
@@ -103,16 +138,17 @@ func (s *server) update() {
 	// apply all inputs to buffer
 	// rollback to oldest of updates
 
+	s.state = step(s.state, s.inputBuffer)
 }
 
-func (s *server) handleRollback(up playerUpdate) {
+func (s *Server) handleRollback(up playerUpdate) {
 	//prevFrame := up.Frame
 	//prevState := s.stateBuffer[prevFrame%len(stateBuffer)]
 
 }
 
 // implements ebiten.Game
-func (s *server) Draw(screen *ebiten.Image) {
+func (s *Server) Draw(screen *ebiten.Image) {
 	screen.Fill(color.NRGBA{0xFF, 0xFF, 0xFF, 0xFF})
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(s.state.ball.pos.x-s.state.ball.radius, s.state.ball.pos.y-s.state.ball.radius)
@@ -123,6 +159,6 @@ func (s *server) Draw(screen *ebiten.Image) {
 }
 
 // implements ebiten.Game
-func (s *server) Layout(outsideWidth, outsideHeight int) (int, int) {
+func (s *Server) Layout(outsideWidth, outsideHeight int) (int, int) {
 	return screenWidth, screenHeight
 }

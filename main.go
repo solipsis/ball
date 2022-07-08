@@ -135,6 +135,7 @@ func (g *Game) Init() error {
 const BUFFER_SIZE = 60
 
 func main() {
+	fmt.Println("------------------------")
 
 	l, err := net.Listen("tcp", "localhost:8090")
 	if err != nil {
@@ -142,7 +143,7 @@ func main() {
 	}
 	log.Printf("listening on http://%v", l.Addr())
 
-	srv := server{
+	srv := Server{
 		clientInputs: make(chan playerUpdate),
 		inputBuffer:  make([][]input, 2),
 		stateBuffer:  make([]state, 60),
@@ -155,11 +156,12 @@ func main() {
 		WriteTimeout: time.Second * 10,
 	}
 
-	go func() {
-		if err := s.Serve(l); err != nil {
-			log.Fatalf("serve: %v", err)
-		}
-	}()
+	//	go func() {
+	fmt.Println("Serving")
+	if err := s.Serve(l); err != nil {
+		log.Fatalf("serve: %v", err)
+	}
+	//	}()
 
 	fmt.Println("Sleeping...")
 	//time.Sleep(1 * time.Second)
@@ -167,13 +169,15 @@ func main() {
 
 	fmt.Println("pre run")
 	// TODO: this never terminates
-	go c.Run("http://localhost:8090")
-	fmt.Println("post Run")
+	/*
+		go c.Run("http://localhost:8090")
+		fmt.Println("post Run")
 
-	if err := ebiten.RunGame(c); err != nil {
-		log.Fatal(err)
-	}
-	return
+		if err := ebiten.RunGame(c); err != nil {
+			log.Fatal(err)
+		}
+		return
+	*/
 
 	/*
 		emptyImage.Fill(color.Black)
