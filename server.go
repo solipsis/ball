@@ -34,6 +34,7 @@ func NewServer() *Server {
 		clientInputs: make(chan playerUpdate),
 		inputBuffer:  make([][]input, 2),
 		stateBuffer:  make([]state, 60),
+		state:        newState(),
 	}
 	s.inputBuffer[0] = make([]input, 60)
 	s.inputBuffer[1] = make([]input, 60)
@@ -119,7 +120,6 @@ func (s *Server) Update() error {
 func (s *Server) update() {
 	// read all pending inputs
 	userUpdate := false
-	fmt.Println("update")
 	for {
 		select {
 		case up := <-s.clientInputs:

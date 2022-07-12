@@ -1,1 +1,3 @@
 ball
+./bin/server/server
+./bin/client/client
